@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "electron ./app/main.js --js-flags='--max_old_space_size=8192'"
+  },
+  "dependencies": {
+    "electron": "^15.3.1",
+    "express": "^4.17.1"
+  }
+}
