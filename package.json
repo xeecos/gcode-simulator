@@ -1,9 +1,29 @@
 {
+  "name": "gcodesimulator",
+  "version": "1.0.0",
+  "main": "./app/main.js",
   "scripts": {
-    "start": "electron ./app/main.js --js-flags='--max_old_space_size=8192'"
+    "start": "electron ./app/main.js --js-flags='--max_old_space_size=8192'",
+    "build": "electron-builder"
   },
-  "dependencies": {
+  "build": {
+    "appId": "com.makeblock.gcodesimulator",
+    "productName": "GCdoe Simulator",
+    "win": {
+      "icon": "build/favicon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
     "electron": "^15.3.1",
-    "express": "^4.17.1"
+    "electron-builder": "20.0.0"
   }
 }

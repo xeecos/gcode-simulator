@@ -32,21 +32,15 @@ async function renderGCode()
     let g1r = Number(`0x${g1Color.substr(1,2)}`);
     let g1g = Number(`0x${g1Color.substr(3,2)}`);
     let g1b = Number(`0x${g1Color.substr(5,2)}`);
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0,0,width,height); 
-    ctx.fillStyle = "#000";
-    ctx.font = "20px Arial"
-    ctx.fillText("loading...",width/2-40,height/2);
-    ctx.fillStyle = backgroundColor;
-    await delay(100);
-    ctx.fillRect(0,0,width,height); 
     let lines = text.split('\n');
     let lastX = 0,lastY = 0,lastS = 0;
     let actions = [];
     let offsetX = document.getElementById("x-offset").value*1.0,offsetY = document.getElementById("y-offset").value*1.0;
     let xScale = document.getElementById("scale").value*1.0, yScale = document.getElementById("scale").value*1.0;
-    lines.forEach((line)=>
+    console.time("time"); 
+    for(let i=0,len=lines.length;i<len;i++)
     {
+        let line = lines[i];
         line = line.toLowerCase();
         let type = line.substr(0,1);
         let cmd = parseInt(line.substr(1,line.indexOf(" ")));
@@ -97,45 +91,35 @@ async function renderGCode()
                 break;
             }
         }
-    });
+        if(i%5000==0)
+        {
+            await delay(0);
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0,0,width,height); 
+            ctx.fillStyle = "#000";
+            ctx.font = "20px Arial"
+            ctx.fillText(`loading...${Math.round(i/len*100)}%`,width/2-40,height/2);
+        }
+    };
+    console.timeEnd("time");
+    ctx.fillStyle = backgroundColor;
+    await delay(100);
+    ctx.fillRect(0,0,width,height); 
     lastX = 0,lastY = 0;
     ctx.moveTo(0,0);
     let outputs = actions;
     let end = new Action('g',0);
     end.x = 0;
     end.y = 0;
-    lastX = 0,lastY = 0;    
-    console.log("start")
-    for(let i=0;i<outputs.length;i++)
+    lastX = 0,lastY = 0;  
+    console.log("start") 
+    console.time("time"); 
+    for(let i=0,len=outputs.length;i<len;i++)
     {
         let action = outputs[i];
         if(action.cmd==0||action.s==0)
         {
             ctx.strokeStyle = g0Color;
-            ctx.beginPath();
-            ctx.moveTo(lastX,lastY);
-            ctx.lineTo(action.x,action.y);
-            ctx.stroke();
-        }
-        else if(action.cmd==1.2)
-        {
-            ctx.strokeStyle = "#00a"
-            ctx.beginPath();
-            ctx.moveTo(lastX,lastY);
-            ctx.lineTo(action.x,action.y);
-            ctx.stroke();
-        }
-        else if(action.cmd==1.3)
-        {
-            ctx.strokeStyle = "#0a0"
-            ctx.beginPath();
-            ctx.moveTo(lastX,lastY);
-            ctx.lineTo(action.x,action.y);
-            ctx.stroke();
-        }
-        else if(action.cmd==1.4)
-        {
-            ctx.strokeStyle = "#c00"
             ctx.beginPath();
             ctx.moveTo(lastX,lastY);
             ctx.lineTo(action.x,action.y);
@@ -150,8 +134,9 @@ async function renderGCode()
             ctx.stroke();
         }
         lastX = action.x,lastY = action.y;
-        // await delay(1);
+        if(i%5000==0)await delay(0);
     }  
+    console.timeEnd("time");
 }
 function readTextFile(file)
 {
