@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<head>
+    <title>GCode Simulator</title>
+    <style>
+        body {
+            margin: 0 0;
+            width: 100%;
+            height: 100vh;
+            text-align: center;
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        #canvas {
+            margin: 0 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .panel {
+            position: absolute;
+            width: 320px;
+            right: 10px;
+            top: 10px;
+            padding: 4px 4px 10px 4px;
+            background-color: rgb(62, 121, 209);
+            border-radius: 4px;
+        }
+
+        input {
+            color:black;
+            width: 160px;
+            font-size: 14px;
+            float: right;
+        }
+
+        span {
+            float: left;
+        }
+
+        button {
+            font-size: 10px;
+            height:22px;
+            margin-right: 14px;
+        }
+
+        .item {
+            color:white;
+            width: 320px;
+            height: 22px;
+            display: inline-block;
+        }
+        .btn
+        {
+            margin-left:100px;
+            display: flex;
+            vertical-align: middle;
+            line-height: 28px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(16px);
+            -ms-transform: translateX(16px);
+            transform: translateX(16px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 16px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="panel">
+        <div class="item">
+            <span>Scale:</span><input id="scale" value="3" />
+        </div>
+        <div class="item">
+            <span>G1 Color:</span><input id="g1-color" value="#AA000000" />
+        </div>
+        <div class="item">
+            <span>G0 Color:</span><input id="g0-color" value="rgba(255,0,0,0.1)" />
+        </div>
+        <div class="item">
+            <span>Background Color:</span><input id="bg-color" value="#FFFFFF" />
+        </div>
+        <div class="item">
+            <span>X offset:</span><input id="x-offset" value="40" />
+        </div>
+        <div class="item">
+            <span>Y offset:</span><input id="y-offset" value="40" />
+        </div>
+        <div class="item btn" >
+            <button id="apply-btn">Apply</button>
+            <label class="switch">
+                <input type="checkbox" id="check-animate">
+                <span class="slider round"></span>
+            </label>
+            <span style="font-size: 12px;">animate</span>
+        </div>
+    </div>
+    <input type="file" id="file" style="display: none;" />
+    <script src="./simulator.js"></script>
+</body>
+
+</html>
