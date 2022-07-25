@@ -2,6 +2,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let width = 800,height = 800;
 let text = "";
+let isAnimate = false;
 window.addEventListener("load",()=>{
     width = (window.innerWidth)
     height = window.innerHeight;
@@ -13,6 +14,15 @@ window.addEventListener("load",()=>{
 document.getElementById("apply-btn").addEventListener("click",()=>{
     console.log("click");
     renderGCode();
+})
+const checkbox = document.getElementById('check-animate')
+
+checkbox.addEventListener('change', (event) => {
+  if (event.currentTarget.checked) {
+    isAnimate = true;
+  } else {
+    isAnimate = false;
+  }
 })
 let uploader = document.getElementById('file');
 uploader.onchange = (e)=>{
@@ -26,24 +36,48 @@ canvas.onclick = ()=>{
 };
 async function renderGCode()
 {
+    let isRelative = false;
     let backgroundColor = document.getElementById("bg-color").value;
     let g0Color = document.getElementById("g0-color").value;
     let g1Color = document.getElementById("g1-color").value;
-    let g1r = Number(`0x${g1Color.substr(1,2)}`);
-    let g1g = Number(`0x${g1Color.substr(3,2)}`);
-    let g1b = Number(`0x${g1Color.substr(5,2)}`);
+    let g1a = Number(`0x${g1Color.substr(1,2)}`);
+    let g1r = Number(`0x${g1Color.substr(3,2)}`);
+    let g1g = Number(`0x${g1Color.substr(5,2)}`);
+    let g1b = Number(`0x${g1Color.substr(7,2)}`);
     let lines = text.split('\n');
     let lastX = 0,lastY = 0,lastS = 0;
     let actions = [];
     let offsetX = document.getElementById("x-offset").value*1.0,offsetY = document.getElementById("y-offset").value*1.0;
     let xScale = document.getElementById("scale").value*1.0, yScale = document.getElementById("scale").value*1.0;
     console.time("time"); 
+    let lastCmd,lastType;
     for(let i=0,len=lines.length;i<len;i++)
     {
         let line = lines[i];
         line = line.toLowerCase();
-        let type = line.substr(0,1);
-        let cmd = parseInt(line.substr(1,line.indexOf(" ")));
+        let keys = {};
+        let currentKey;
+        for(let k=0,slen = line.length;k<slen;k++)
+        {
+            let c = line.charAt(k);
+            if(c=='x'||c=='y'||c=='g'||c=='m'||c=='s'||c=='f')
+            {
+                currentKey = c;
+                keys[currentKey]="";
+            }
+            else if(c=='\n'||c==' ')
+            {
+                continue;
+            }
+            else
+            {
+                keys[currentKey]+=c;
+            }
+        }
+        let type = keys['g']?'g':(keys['m']?'m':lastType);
+        let cmd = keys['g']?parseInt(keys['g']):(keys['m']?parseInt(keys['m']):lastCmd);
+        lastType = type;
+        lastCmd = cmd;
         if(type=='g')
         {
             switch(cmd)
@@ -51,47 +85,59 @@ async function renderGCode()
                 case 0:
                 case 1:
                 {
-                    let xIndex = line.indexOf('x');
-                    let yIndex = line.indexOf('y');
-                    let sIndex = line.indexOf('s');
                     let x = lastX, y = lastY,s = lastS;
                     let action = new Action(type,cmd);
-                    if(xIndex>-1)
+                    if(keys['x'])
                     {
-                        let spaceIndex = line.indexOf(' ',xIndex);
-                        x = xScale*Math.abs(parseFloat(line.substr(xIndex+1,spaceIndex==-1?line.length:spaceIndex)))-offsetX;
+                        x = xScale*(parseFloat(keys['x']))+offsetX;
                         lastX = x;
                     }
-                    if(yIndex>-1)
+                    if(keys['y'])
                     {
-                        let spaceIndex = line.indexOf(' ',yIndex);
-                        y = yScale*Math.abs(parseFloat(line.substr(yIndex+1,spaceIndex==-1?line.length:spaceIndex)))-offsetY;
+                        y = yScale*(parseFloat(keys['y']))+offsetY;
                         lastY = y;
                     }
-                    if(sIndex>-1)
+                    if(keys['s'])
                     {
-                        let spaceIndex = line.indexOf(' ',sIndex);
-                        s = parseFloat(line.substr(sIndex+1,spaceIndex==-1?line.length:spaceIndex));
+                        s = parseFloat(keys['s']);
                         lastS = s;
                     }
                     action.x = x;
                     action.y = y;
                     action.s = s;
-                    if(offsetX==-1&&offsetY==-1&&x>0&&y>0)
-                    {
-                        action.x = 0;
-                        action.y = 0;
-                        lastX = 0;
-                        lastY = 0;
-                        offsetX = x;
-                        offsetY = y;
-                    }
                     actions.push(action);
                 }
                 break;
+                default:
+                    let action = new Action(type,cmd);
+                    if(keys['x'])
+                    {
+                        action.x = xScale*(parseFloat(keys['x']))+offsetX;
+                    }
+                    if(keys['y'])
+                    {
+                        action.y = yScale*(parseFloat(keys['y']))+offsetY;
+                    }
+                    if(keys['s'])
+                    {
+                        s = parseFloat(keys['s']);
+                        action.s = s;
+                    }
+                    actions.push(action);
+                break;
             }
         }
-        if(i%5000==0)
+        else if(type=='m')
+        {
+            let action = new Action(type,cmd);
+            if(keys['s'])
+            {
+                action.s = parseInt(keys['s']);
+                lastS = action.s;
+            }
+            actions.push(action);
+        }
+        if(i%(len>10000?10000:100)==0)
         {
             await delay(0);
             ctx.fillStyle = backgroundColor;
@@ -112,30 +158,60 @@ async function renderGCode()
     end.x = 0;
     end.y = 0;
     lastX = 0,lastY = 0;  
-    console.log("start") 
+    console.log("start:",outputs.length) 
     console.time("time"); 
     for(let i=0,len=outputs.length;i<len;i++)
     {
         let action = outputs[i];
-        if(action.cmd==0||action.s==0)
+        if(action.cmd==90||action.cmd==91)
+        {
+            isRelative = action.cmd==91;
+        }
+        else if(action.cmd==92)
+        {
+            lastX = action.x;
+            lastY = action.y;
+        }
+        else if(action.cmd==0||action.s==0)
         {
             ctx.strokeStyle = g0Color;
             ctx.beginPath();
             ctx.moveTo(lastX,lastY);
-            ctx.lineTo(action.x,action.y);
+            if(isRelative)
+            {
+                ctx.lineTo(lastX+action.x,lastY+action.y);
+            }
+            else
+            {
+                ctx.lineTo(action.x,action.y);
+            }
             ctx.stroke();
+        }
+        else if(action.type=='m'&&action.cmd==3)
+        {
+            ctx.strokeStyle = action.s==0?`${g0Color}`:`rgba(${g1r},${g1g},${g1b},${action.s/1000*g1a/256})`
         }
         else
         {
-            ctx.strokeStyle = action.s==0?`${g0Color}`:`rgba(${g1r},${g1g},${g1b},${action.s/1000})`
+            ctx.strokeStyle = action.s==0?`${g0Color}`:`rgba(${g1r},${g1g},${g1b},${action.s/1000*g1a/256})`
             ctx.beginPath();
             ctx.moveTo(lastX,lastY);
-            ctx.lineTo(action.x,action.y);
+            if(isRelative)
+            {
+                ctx.lineTo(lastX+action.x,lastY+action.y);
+            }
+            else
+            {
+                ctx.lineTo(action.x,action.y);
+            }
             ctx.stroke();
         }
-        lastX = action.x,lastY = action.y;
-        if(i%5000==0)await delay(0);
+        let dx = isRelative?action.x:(action.x-lastX),dy = isRelative?action.y:(action.y-lastY);
+        let dist = action.cmd==0?0:(dx*dx+dy*dy);
+        lastX = isRelative?lastX+action.x:action.x,lastY = isRelative?lastY+action.y:action.y;
+        if(i%(len>5000?20000:100)==0||isAnimate)await delay(Math.min(200,dist/10));
     }  
+    ctx.stroke();
     console.timeEnd("time");
 }
 function readTextFile(file)
@@ -144,11 +220,6 @@ function readTextFile(file)
     reader.addEventListener('load', async (e)=>{
         text = e.target.result;
         renderGCode();
-        // ctx.strokeStyle = "#800"
-        // ctx.beginPath();
-        // ctx.moveTo(lastX,lastY);
-        // ctx.lineTo(0,0);
-        // ctx.stroke(); 
     });
     reader.readAsText(file);
 }
