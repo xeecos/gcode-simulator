@@ -233,7 +233,7 @@ function lineTo(ctx,x,y)
             let tx = x,ty = y;
             let dx = (tx-sx), dy = (ty-sy);
             let dist = dx*dx+dy*dy;
-            if(dist<4)
+            if(dist<1)
             {
                 ctx.lineTo(x,y);
                 return resolve();
