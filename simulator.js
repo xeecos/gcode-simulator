@@ -3,6 +3,8 @@ const ctx = canvas.getContext("2d");
 let width = 800,height = 800;
 let text = "";
 let isAnimate = false;
+let sx = 0, sy = 0;
+
 window.addEventListener("load",()=>{
     width = (window.innerWidth)
     height = window.innerHeight;
@@ -152,7 +154,7 @@ async function renderGCode()
     await delay(100);
     ctx.fillRect(0,0,width,height); 
     lastX = 0,lastY = 0;
-    ctx.moveTo(0,0);
+    await moveTo(ctx,0,0);
     let outputs = actions;
     let end = new Action('g',0);
     end.x = 0;
@@ -176,14 +178,14 @@ async function renderGCode()
         {
             ctx.strokeStyle = g0Color;
             ctx.beginPath();
-            ctx.moveTo(lastX,lastY);
+            await moveTo(ctx,lastX,lastY);
             if(isRelative)
             {
-                ctx.lineTo(lastX+action.x,lastY+action.y);
+                await lineTo(ctx,lastX+action.x,lastY+action.y);
             }
             else
             {
-                ctx.lineTo(action.x,action.y);
+                await lineTo(ctx,action.x,action.y);
             }
             ctx.stroke();
         }
@@ -195,24 +197,65 @@ async function renderGCode()
         {
             ctx.strokeStyle = action.s==0?`${g0Color}`:`rgba(${g1r},${g1g},${g1b},${action.s/1000*g1a/256})`
             ctx.beginPath();
-            ctx.moveTo(lastX,lastY);
+            await moveTo(ctx,lastX,lastY);
             if(isRelative)
             {
-                ctx.lineTo(lastX+action.x,lastY+action.y);
+                await lineTo(ctx,lastX+action.x,lastY+action.y);
             }
             else
             {
-                ctx.lineTo(action.x,action.y);
+                await lineTo(ctx,action.x,action.y);
             }
             ctx.stroke();
         }
         let dx = isRelative?action.x:(action.x-lastX),dy = isRelative?action.y:(action.y-lastY);
         let dist = action.cmd==0?0:(dx*dx+dy*dy);
         lastX = isRelative?lastX+action.x:action.x,lastY = isRelative?lastY+action.y:action.y;
-        if(i%(len>5000?20000:100)==0||isAnimate)await delay(Math.min(200,dist/10));
+        if(i%(len>5000?20000:100)==0||isAnimate)await delay(0);
     }  
     ctx.stroke();
     console.timeEnd("time");
+}
+function moveTo(ctx,x,y)
+{
+    return new Promise(resolve=>{
+        sx = x;
+        sy = y;
+        ctx.moveTo(x,y);
+        resolve();
+    })
+}
+function lineTo(ctx,x,y)
+{
+    return new Promise(async resolve=>{
+        if(isAnimate)
+        {
+            let tx = x,ty = y;
+            let dx = (tx-sx), dy = (ty-sy);
+            let dist = dx*dx+dy*dy;
+            if(dist<4)
+            {
+                ctx.lineTo(x,y);
+                return resolve();
+            }
+            let steps = Math.min(20,Math.floor(dist/36)+1);
+            dx /= steps;
+            dy /= steps;
+            x = sx,y=sy;
+            for(let i=0;i<steps;i++)
+            {
+                x+=dx,y+=dy;
+                ctx.lineTo(x,y);
+                ctx.stroke();
+                await delay(8);
+            }
+        }
+        else
+        {
+            ctx.lineTo(x,y);
+        }
+        resolve();
+    })
 }
 function readTextFile(file)
 {
