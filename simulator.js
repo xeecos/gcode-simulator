@@ -230,8 +230,9 @@ async function renderGCode()
 }
 function moveTo(ctx,x,y)
 {
-    x -= gx;
-    y -= gy;
+    let xScale = document.getElementById("scale").value*1.0, yScale = document.getElementById("scale").value*1.0;
+    x -= gx*xScale;
+    y -= gy*yScale;
     return new Promise(resolve=>{
         sx = x;
         sy = y;
@@ -241,9 +242,10 @@ function moveTo(ctx,x,y)
 }
 function lineTo(ctx,x,y)
 {
+    let xScale = document.getElementById("scale").value*1.0, yScale = document.getElementById("scale").value*1.0;
+    x -= gx*xScale;
+    y -= gy*yScale;
     return new Promise(async resolve=>{
-        x -= gx;
-        y -= gy;
         if(isAnimate)
         {
             let tx = x,ty = y;
