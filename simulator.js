@@ -230,6 +230,8 @@ async function renderGCode()
 }
 function moveTo(ctx,x,y)
 {
+    x -= gx;
+    y -= gy;
     return new Promise(resolve=>{
         sx = x;
         sy = y;
