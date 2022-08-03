@@ -4,7 +4,7 @@ let width = 800,height = 800;
 let text = "";
 let isAnimate = false;
 let sx = 0, sy = 0;
-
+let gx = 0, gy = 0;
 window.addEventListener("load",()=>{
     width = (window.innerWidth)
     height = window.innerHeight;
@@ -53,6 +53,8 @@ async function renderGCode()
     let xScale = document.getElementById("scale").value*1.0, yScale = document.getElementById("scale").value*1.0;
     console.time("time"); 
     let lastCmd,lastType;
+    gx = 10000;
+    gy = 10000;
     for(let i=0,len=lines.length;i<len;i++)
     {
         let line = lines[i];
@@ -91,12 +93,22 @@ async function renderGCode()
                     let action = new Action(type,cmd);
                     if(keys['x'])
                     {
-                        x = xScale*(parseFloat(keys['x']))+offsetX;
+                        x = parseFloat(keys['x']);
+                        if(x<gx)
+                        {
+                            gx = x;
+                        }
+                        x = xScale*x +offsetX;
                         lastX = x;
                     }
                     if(keys['y'])
                     {
-                        y = yScale*(parseFloat(keys['y']))+offsetY;
+                        y = parseFloat(keys['y']);
+                        if(y<gy)
+                        {
+                            gy = y;
+                        }
+                        y = yScale*(y)+offsetY;
                         lastY = y;
                     }
                     if(keys['s'])
@@ -228,6 +240,8 @@ function moveTo(ctx,x,y)
 function lineTo(ctx,x,y)
 {
     return new Promise(async resolve=>{
+        x -= gx;
+        y -= gy;
         if(isAnimate)
         {
             let tx = x,ty = y;
