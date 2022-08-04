@@ -28,6 +28,7 @@ window.addEventListener("resize", () => {
         canvas.height = window.innerHeight;
         ctx.width = canvas.width;
         ctx.height = canvas.height;
+        renderGCode();
     },100);
 });
 document.getElementById("apply-btn").addEventListener("click", () => {
