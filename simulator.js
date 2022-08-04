@@ -11,12 +11,14 @@ let gx = 0,
 let totalDistance = 0;
 let g0Distance = 0;
 window.addEventListener("load", () => {
-  width = window.innerWidth;
-  height = window.innerHeight;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  ctx.width = canvas.width;
-  ctx.height = canvas.height;
+    setTimeout(()=>{
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.width = canvas.width;
+        ctx.height = canvas.height;
+    },100);
 });
 document.getElementById("apply-btn").addEventListener("click", () => {
   console.log("click");
