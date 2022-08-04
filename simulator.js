@@ -20,6 +20,16 @@ window.addEventListener("load", () => {
         ctx.height = canvas.height;
     },100);
 });
+window.addEventListener("resize", () => {
+    setTimeout(()=>{
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.width = canvas.width;
+        ctx.height = canvas.height;
+    },100);
+});
 document.getElementById("apply-btn").addEventListener("click", () => {
   console.log("click");
   renderGCode();
