@@ -177,6 +177,9 @@ async function renderGCode() {
   (lastX = 0), (lastY = 0);
   console.log("start:", outputs.length);
   console.time("time");
+  g0Distance = 0;
+  totalDistance = 0;
+  ctx.lineWidth = 0.5;
   for (let i = 0, len = outputs.length; i < len; i++) {
     let action = outputs[i];
     if (action.cmd == 90 || action.cmd == 91) {
