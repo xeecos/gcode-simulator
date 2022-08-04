@@ -179,7 +179,7 @@ async function renderGCode() {
   console.time("time");
   g0Distance = 0;
   totalDistance = 0;
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth =  document.getElementById("linewidth").value * 1.0;
   for (let i = 0, len = outputs.length; i < len; i++) {
     let action = outputs[i];
     if (action.cmd == 90 || action.cmd == 91) {
