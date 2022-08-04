@@ -233,8 +233,8 @@ async function renderGCode() {
     let dist = action.cmd == 0 ? 0 : dx * dx + dy * dy;
     (lastX = isRelative ? lastX + action.x : action.x),
       (lastY = isRelative ? lastY + action.y : action.y);
-    document.getElementById("g0Distance").value = g0Distance / xScale;
-    document.getElementById("totalDistance").value = totalDistance / xScale;
+    document.getElementById("g0Distance").value = `${(g0Distance / xScale).toFixed(2)}mm`;
+    document.getElementById("totalDistance").value = `${(totalDistance / xScale).toFixed(2)}mm`;
     if (i % (len > 5000 ? 20000 : 100) == 0 || isAnimate) await delay(0);
   }
   ctx.stroke();
