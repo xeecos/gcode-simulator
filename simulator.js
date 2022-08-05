@@ -11,25 +11,25 @@ let gx = 0,
 let totalDistance = 0;
 let g0Distance = 0;
 window.addEventListener("load", () => {
-    setTimeout(()=>{
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        ctx.width = canvas.width;
-        ctx.height = canvas.height;
-    },100);
+  setTimeout(() => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.width = canvas.width;
+    ctx.height = canvas.height;
+  }, 100);
 });
 window.addEventListener("resize", () => {
-    setTimeout(()=>{
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        ctx.width = canvas.width;
-        ctx.height = canvas.height;
-        renderGCode();
-    },100);
+  setTimeout(() => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.width = canvas.width;
+    ctx.height = canvas.height;
+    renderGCode();
+  }, 100);
 });
 document.getElementById("apply-btn").addEventListener("click", () => {
   console.log("click");
@@ -63,8 +63,8 @@ async function renderGCode() {
   let g1g = Number(`0x${g1Color.substr(5, 2)}`);
   let g1b = Number(`0x${g1Color.substr(7, 2)}`);
   let lines = text.split("\n");
-  let lastX = 0,
-    lastY = 0,
+  let lastX = 0.0,
+    lastY = 0.0,
     lastS = 0;
   let actions = [];
   let offsetX = document.getElementById("x-offset").value * 1.0,
@@ -117,19 +117,19 @@ async function renderGCode() {
             let action = new Action(type, cmd);
             if (keys["x"]) {
               x = parseFloat(keys["x"]);
-              if (x < gx) {
-                gx = x;
+              lastX = isRelative ? lastX + x : x;
+              if (lastX < gx) {
+                gx = lastX;
               }
-              x = xScale * x + offsetX;
-              lastX = x;
+              x = lastX;
             }
             if (keys["y"]) {
               y = parseFloat(keys["y"]);
-              if (y < gy) {
-                gy = y;
+              lastY = isRelative ? lastY + y : y;
+              if (lastY < gy) {
+                gy = lastY;
               }
-              y = yScale * y + offsetY;
-              lastY = y;
+              y = lastY;
             }
             if (keys["s"]) {
               s = parseFloat(keys["s"]);
@@ -143,11 +143,16 @@ async function renderGCode() {
           break;
         default:
           let action = new Action(type, cmd);
+          if (cmd == 90) {
+            isRelative = false;
+          } else if (cmd == 91) {
+            isRelative = true;
+          }
           if (keys["x"]) {
-            action.x = xScale * parseFloat(keys["x"]) + offsetX;
+            action.x = parseFloat(keys["x"]);
           }
           if (keys["y"]) {
-            action.y = yScale * parseFloat(keys["y"]) + offsetY;
+            action.y = parseFloat(keys["y"]);
           }
           if (keys["s"]) {
             s = parseFloat(keys["s"]);
@@ -187,34 +192,30 @@ async function renderGCode() {
   let end = new Action("g", 0);
   end.x = 0;
   end.y = 0;
-  (lastX = 0), (lastY = 0);
+  (lastX = 0.0), (lastY = 0.0);
   console.log("start:", outputs.length);
   console.time("time");
   g0Distance = 0;
   totalDistance = 0;
-  ctx.lineWidth =  document.getElementById("linewidth").value * 1.0;
+  isRelative = false;
+  ctx.lineWidth = document.getElementById("linewidth").value * 1.0;
   for (let i = 0, len = outputs.length; i < len; i++) {
     let action = outputs[i];
     if (action.cmd == 90 || action.cmd == 91) {
-      isRelative = action.cmd == 91;
+      // isRelative = action.cmd == 91;
     } else if (action.cmd == 92) {
-      lastX = action.x;
-      lastY = action.y;
+      lastX = action.x * xScale + offsetX;
+      lastY = action.y * yScale + offsetY;
     } else if (action.cmd == 0 || action.s == 0) {
       ctx.strokeStyle = g0Color;
       ctx.beginPath();
       await moveTo(ctx, lastX, lastY);
       let dx = 0;
       let dy = 0;
-      if (isRelative) {
-        dx = action.x;
-        dy = action.y;
-        await lineTo(ctx, lastX + action.x, lastY + action.y);
-      } else {
-        dx = action.x - lastX;
-        dy = action.y - lastY;
-        await lineTo(ctx, action.x, action.y);
-      }
+      
+      dx = action.x - lastX;
+      dy = action.y - lastY;
+      await lineTo(ctx, action.x, action.y);
       g0Distance += Math.sqrt(dx * dx + dy * dy);
       totalDistance += g0Distance;
       ctx.stroke();
@@ -232,35 +233,36 @@ async function renderGCode() {
       await moveTo(ctx, lastX, lastY);
       let dx = 0;
       let dy = 0;
-      if (isRelative) {
-        dx = action.x;
-        dy = action.y;
-        await lineTo(ctx, lastX + action.x, lastY + action.y);
-      } else {
-        dx = action.x - lastX;
-        dy = action.y - lastY;
-        await lineTo(ctx, action.x, action.y);
-      }
+      dx = action.x - lastX;
+      dy = action.y - lastY;
+      await lineTo(ctx, action.x, action.y);
       totalDistance += Math.sqrt(dx * dx + dy * dy);
       ctx.stroke();
     }
-    let dx = isRelative ? action.x : action.x - lastX,
-      dy = isRelative ? action.y : action.y - lastY;
-    let dist = action.cmd == 0 ? 0 : dx * dx + dy * dy;
-    (lastX = isRelative ? lastX + action.x : action.x),
-      (lastY = isRelative ? lastY + action.y : action.y);
-    document.getElementById("g0Distance").value = `${(g0Distance / xScale).toFixed(2)}mm`;
-    document.getElementById("totalDistance").value = `${(totalDistance / xScale).toFixed(2)}mm`;
+    let dx = action.x - lastX,
+      dy = action.y - lastY;
+    lastX = action.x*1.0;
+    lastY = action.y*1.0;
+    document.getElementById("g0Distance").value = `${(
+      g0Distance / xScale
+    ).toFixed(2)}mm`;
+    document.getElementById("totalDistance").value = `${(
+      totalDistance / xScale
+    ).toFixed(2)}mm`;
     if (i % (len > 5000 ? 20000 : 100) == 0 || isAnimate) await delay(0);
   }
   ctx.stroke();
   console.timeEnd("time");
 }
 function moveTo(ctx, x, y) {
+  let offsetX = document.getElementById("x-offset").value * 1.0,
+    offsetY = document.getElementById("y-offset").value * 1.0;
   let xScale = document.getElementById("scale").value * 1.0,
     yScale = document.getElementById("scale").value * 1.0;
-  x -= gx * xScale;
-  y -= gy * yScale;
+  x -= gx;
+  y -= gy;
+  x = xScale * x + offsetX;
+  y = yScale * y + offsetY;
   return new Promise((resolve) => {
     sx = x;
     sy = y;
@@ -269,10 +271,14 @@ function moveTo(ctx, x, y) {
   });
 }
 function lineTo(ctx, x, y) {
+  let offsetX = document.getElementById("x-offset").value * 1.0,
+    offsetY = document.getElementById("y-offset").value * 1.0;
   let xScale = document.getElementById("scale").value * 1.0,
     yScale = document.getElementById("scale").value * 1.0;
-  x -= gx * xScale;
-  y -= gy * yScale;
+  x -= gx;
+  y -= gy;
+  x = xScale * x + offsetX;
+  y = yScale * y + offsetY;
   return new Promise(async (resolve) => {
     if (isAnimate) {
       let tx = x,
