@@ -80,6 +80,8 @@ async function renderGCode() {
     line = line.toLowerCase();
     let keys = {};
     let currentKey;
+    if(line[0]==';')continue;
+    if(line.trim()[0]==';')continue;
     for (let k = 0, slen = line.length; k < slen; k++) {
       let c = line.charAt(k);
       if (
